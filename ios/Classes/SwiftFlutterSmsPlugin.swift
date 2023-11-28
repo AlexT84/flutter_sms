@@ -30,7 +30,25 @@ public class SwiftFlutterSmsPlugin: NSObject, FlutterPlugin, UINavigationControl
           controller.body = _arguments["message"] as? String
           controller.recipients = _arguments["recipients"] as? [String]
           controller.messageComposeDelegate = self
-          UIApplication.shared.keyWindow?.rootViewController?.present(controller, animated: true, completion: nil)
+            guard let rootViewController = UIApplication.shared.keyWindow?.rootViewController else {
+                result(FlutterError(
+                    code: "device_not_capable",
+                    message: "We could not detect rootViewController!",
+                    details: ""
+                  )
+                )
+                return
+            }
+            guard let visibeViewController = getVisibleViewController(rootViewController) else {
+                result(FlutterError(
+                    code: "device_not_capable",
+                    message: "We could not detect visibleViewController!",
+                    details: ""
+                  )
+                )
+                return
+            }
+            visibeViewController.present(controller, animated: true, completion: nil)
         } else {
           result(FlutterError(
               code: "device_not_capable",
@@ -69,4 +87,18 @@ public class SwiftFlutterSmsPlugin: NSObject, FlutterPlugin, UINavigationControl
     }
     UIApplication.shared.keyWindow?.rootViewController?.dismiss(animated: true, completion: nil)
   }
+    
+    private func getVisibleViewController(_ rootViewController: UIViewController) -> UIViewController? {
+           if let presentedViewController = rootViewController.presentedViewController {
+               return getVisibleViewController(presentedViewController)
+           }
+           if let navigationController = rootViewController as? UINavigationController {
+               return navigationController.visibleViewController
+           }
+           if let tabBarController = rootViewController as? UITabBarController {
+               return tabBarController.selectedViewController
+           }
+           return rootViewController
+       }
+
 }
